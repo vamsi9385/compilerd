@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Executor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .top{
+            display: flex;
+            justify-content: space-between;
+        }
+        .container {
+            display: flex;
+            width: 1170px;
+            height: 450px;
+            margin: 40px auto;
+            padding: 10px;
+            border: 1px solid #030303;
+            flex-direction: row;
+            gap: 300px ;
+            transition: border-color 0.3s;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .samp {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #030303;
+            border-radius: 10px;
+            background-color: #00000097;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+        }
+        .form-control-main {
+            width: 150%;
+            height: 300px;
+            padding: 20px;
+            font-size: 18px;
+            border: 1px solid #030303;
+            background-color: #00000097;
+            color: white;
+            border-radius: 10px;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #3e8e41;
+        }
+        .output {
+            display: flex;
+            width: 200px;
+            height: 300px;
+            
+            padding: 20px;
+            border: 1px solid #030303;
+            border-radius: 10px;
+            background-color: #00000097;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            color: #ddd;
+            display: flex;
+            align-items: flex-start;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+        }
+        .theme-toggle {
+            margin: 20px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .theme-toggle.light {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .theme-toggle.dark {
+            background-color: #333;
+            color: #f0f0f0;
+        }
+        .dark-theme {
+            background-color: #333;
+            color: #f0f0f0;
+        }
+        .dark-theme .container {
+            border-color: #ccc;
+        }
+        .dark-theme .form-control,
+        .dark-theme .form-control-main,
+        .dark-theme .output {
+            background-color: #444;
+            border-color: #ccc;
+            color: #f0f0f0;
+        }
+        .dark-theme .btn,
+        .dark-theme .theme-toggle.light {
+            background-color: #444;
+            color: #f0f0f0;
+        }
+        .dark-theme .theme-toggle.dark {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="top">
+        <h1>ONLINE_COMPILER</h1>  
+        <button class="theme-toggle light" id="theme-toggle" >Switch to Dark Theme</button>
+    </div>
+    <div class="container">
+        <form id="execute-form">
+            <div class="samp">
+                <div class="form-group">
+                    <label for="language">Language:</label>
+                    <select id="language" class="form-control">
+                        <option value="nodejs">Node.js</option>
+                        <option value="python">Python</option>
+                        <option value="java">Java</option>
+                        <option value="c">C</option>
+                        <option value="cpp">C++</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="script">Script:</label>
+                    <textarea id="script" class="form-control-main" rows="10"></textarea>
+                    <button type="submit" class="btn" id="execute-btn">Execute</button>
+                </div>
+            </div>
+        </form>
+        <div>
+            <label for="script">Output:</label>
+            <div class="output" id="output"></div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('execute-form');
+        const outputDiv = document.getElementById('output');
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const language = document.getElementById('language').value;
+            const script = document.getElementById('script').value;
+
+            try {
+                const response = await fetch('http://localhost:3000/api/execute/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ language, script })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to execute script');
+                }
+
+                const result = await response.json();
+                console.log('Execution result:', result);
+                displayOutput(result);
+            } catch (error) {
+                console.error('Error executing script:', error);
+                outputDiv.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+            }
+        });
+
+        function displayOutput(result) {
+            if (result.output !== undefined && result.output !== null && result.output !== '') {
+                outputDiv.innerHTML = `
+                    <pre>Output: ${result.output}</pre>
+                    <!-- Add more fields as needed -->
+                `;
+            } else if (result.compile_message !== undefined && result.compile_message !== null && result.compile_message !== '') {
+                outputDiv.innerHTML = `
+                    <pre>Compilation Error: ${result.compile_message}</pre>
+                    <!-- Add more fields as needed -->
+                `;
+            } else {
+                outputDiv.innerHTML = `
+                    <pre>No output or compilation message found.</pre>
+                    <!-- Add more fields as needed -->
+                `;
+            }
+        }
+
+        themeToggle.addEventListener('click', () => {
+            if (body.classList.contains('dark-theme')) {
+                body.classList.remove('dark-theme');
+                themeToggle.textContent = 'Switch to Dark Theme';
+                themeToggle.classList.remove('dark');
+                themeToggle.classList.add('light');
+            } else {
+                body.classList.add('dark-theme');
+                themeToggle.textContent = 'Switch to Light Theme';
+                themeToggle.classList.remove('light');
+                themeToggle.classList.add('dark');
+            }
+        });
+    </script>
+</body>
+</html>
